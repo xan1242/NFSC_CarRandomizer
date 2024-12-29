@@ -1,0 +1,7 @@
+1. Tutorial test drive is disabled due to instabilities
+2. It's best to do the DDay and tutorial without car randomizer first and then enable it later
+3. Sometimes cars have transparent paint
+4. Sometimes cars don't have sound or have double engine sound (usually happens after 2nd car, go to FE and back to restore)
+5. It's best to save the game after every boss just in case
+6. Sometimes the game may crash and/or softlock in a infinite loading screen -- this is because of sounds. If you want the most stable experience, you can disable sound by either launching the game with the "-nosound" argument, or making a "nosound.txt" file next to the ASI
+7. Cops disappear after car switching - this is normal
