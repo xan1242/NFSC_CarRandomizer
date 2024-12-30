@@ -101,18 +101,18 @@ namespace CarRandomizer
 	//	return *reinterpret_cast<char**>(layout + 0xC);
 	//}
 
-	static uint32_t TryGetPresetKey(uintptr_t carRecord)
-	{
-		if (!*reinterpret_cast<bool*>(carRecord + 0x16))
-			return 0;
-
-		return *reinterpret_cast<uint32_t*>(carRecord + 0xC);
-	}
-
-	static uint32_t TryGetVehicleKey(uintptr_t carRecord)
-	{
-		return *reinterpret_cast<uint32_t*>(carRecord + 0x8);
-	}
+	//static uint32_t TryGetPresetKey(uintptr_t carRecord)
+	//{
+	//	if (!*reinterpret_cast<bool*>(carRecord + 0x16))
+	//		return 0;
+	//
+	//	return *reinterpret_cast<uint32_t*>(carRecord + 0xC);
+	//}
+	//
+	//static uint32_t TryGetVehicleKey(uintptr_t carRecord)
+	//{
+	//	return *reinterpret_cast<uint32_t*>(carRecord + 0x8);
+	//}
 
 	//static HRESULT WINAPI SHGetFolderPathA_Game(HWND hwnd, int csidl, HANDLE hToken, DWORD dwFlags, LPSTR pszPath)
 	//{
