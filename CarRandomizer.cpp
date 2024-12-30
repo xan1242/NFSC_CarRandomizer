@@ -68,9 +68,6 @@ namespace CarRandomizer
 
 	bool bQueueEAXRefreshFromNIS;
 
-	//bool bTestTrigger;
-	//char testVehicleName[128];
-
 	static int GetGameFlowManagerState()
 	{
 		if (!pGameFlowManagerState)
@@ -209,90 +206,6 @@ namespace CarRandomizer
 		
 	}
 
-	//
-	// not necessary since the active vehicle is actually set properly
-	// 
-	
-	//static void SaveActiveVehicle(const char* name)
-	//{
-	//	char gameSaveDirPath[MAX_PATH];
-	//	SHGetFolderPathA_Game(NULL, CSIDL_PERSONAL | CSIDL_FLAG_CREATE, NULL, 0, gameSaveDirPath);
-	//
-	//	std::filesystem::path savePath = gameSaveDirPath;
-	//	savePath /= "NFS Carbon";
-	//	savePath /= name;
-	//	savePath += "_RNDCAR";
-	//
-	//	try
-	//	{
-	//		std::ofstream ofile(savePath, std::ios::binary);
-	//		if (!ofile.is_open())
-	//			return;
-	//
-	//		ofile.write((const char*)&CurrentVehicle, sizeof(CurrentVehicle));
-	//
-	//		ofile.close();
-	//	}
-	//	catch (...)
-	//	{
-	//		return;
-	//	}
-	//}
-	//
-	//static void LoadActiveVehicle(const char* name)
-	//{
-	//	char gameSaveDirPath[MAX_PATH];
-	//	SHGetFolderPathA_Game(NULL, CSIDL_PERSONAL | CSIDL_FLAG_CREATE, NULL, 0, gameSaveDirPath);
-	//
-	//	std::filesystem::path savePath = gameSaveDirPath;
-	//	savePath /= "NFS Carbon";
-	//	savePath /= name;
-	//	savePath += "_RNDCAR";
-	//
-	//	try
-	//	{
-	//		std::ifstream ifile(savePath, std::ios::binary);
-	//		if (!ifile.is_open())
-	//			return;
-	//
-	//		ifile.read((char*)&CurrentVehicle, sizeof(CurrentVehicle));
-	//
-	//		ifile.close();
-	//	}
-	//	catch (...)
-	//	{
-	//		return;
-	//	}
-	//}
-
-	//static void DoDebugVehicleSwitcher()
-	//{
-	//	SetVehicle(testVehicleName);
-	//
-	//	//uintptr_t pDebugVehicleSelection = DebugVehicleSelection::Get();
-	//	//if (!pDebugVehicleSelection)
-	//	//	return;
-	//	//
-	//	//DebugVehicleSelection::SwitchPlayerVehicle(pDebugVehicleSelection, testVehicleName);
-	//	//
-	//	//
-	//	////CommitAudioAssets();
-	//	//
-	//	//EAXAudioRefresh();
-	//
-	//	//uintptr_t pEAXSound = GetEAXSound();
-	//	//if (pEAXSound)
-	//	//{
-	//	//	*reinterpret_cast<bool*>(0xA8BA77) = true;
-	//	//	EAXSound_RefreshNewGameplay(pEAXSound);
-	//	//}
-	//
-	//	//CommitAudioAssets();
-	//	//TriggerAudioRestartRace();
-	//	//bQueueAudioCommit = true;
-	//	//bQueueAudioRestartRace = true;
-	//}
-
 	static void HandleMainLoop()
 	{
 		if (bQueueEAXRefreshFromNIS)
@@ -304,37 +217,6 @@ namespace CarRandomizer
 					EAXSound::Refresh();
 			}
 		}
-
-		//if (bQueueAudioRestartRace)
-		//{
-		//	bQueueAudioRestartRace = false;
-		//	//CommitAudioAssets();
-		//	TriggerAudioRestartRace();
-		//}
-	
-		//if (bQueueAudioCommit)
-		//{
-		//	bQueueAudioCommit = false;
-		//	bQueueAudioRestartRace = true;
-		//	CommitAudioAssets();
-		//}
-	
-		//if (QueueEAXAudioRefresh)
-		//{
-		//	if (QueueEAXAudioRefresh == 1)
-		//		QueueEAXAudioRefresh++;
-		//	else if (QueueEAXAudioRefresh <= 2)
-		//	{
-		//		QueueEAXAudioRefresh = 0;
-		//		EAXAudioRefresh();
-		//	}
-		//}
-	
-		//if (bTestTrigger)
-		//{
-		//	bTestTrigger = false;
-		//	DoDebugVehicleSwitcher();
-		//}
 	}
 
 	static void GetCarList()
