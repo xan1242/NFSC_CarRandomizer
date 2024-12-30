@@ -12,6 +12,7 @@
 #include <vector>
 #include <fstream>
 #include <filesystem>
+#include <chrono>
 #include <shlobj_core.h>
 
 //
@@ -31,6 +32,7 @@ namespace CarRandomizer
 	uintptr_t pGame_DoPostBossFlow;
 	uintptr_t pGameFlowManager_LoadFrontend;
 	uintptr_t pAttribGenPVehicle;
+	//uintptr_t pAttribGenPresetRide;
 	uintptr_t p_bRandom;
 	//uintptr_t p_SHGetFolderPathA;
 	uintptr_t pDALCareer_SetCar;
@@ -38,17 +40,30 @@ namespace CarRandomizer
 	uintptr_t pGRaceParameters_GetEventID;
 	uintptr_t pGRaceParameters_GetRaceType;
 	uintptr_t pGRaceParameters_GetIsBossRace;
+	uintptr_t pGRaceParameters_GetIsChallengeSeriesRace;
+	uintptr_t pGRaceParameters_GetPlayerCarType;
+	uintptr_t pGRaceParameters_GetUsePresetRide;
+	uintptr_t pGRaceParameters_GetPlayerCarTypeHash;
+
+	std::chrono::steady_clock::time_point nextSpeechExecution;
+	uintptr_t pSpeech_Manager_Update;
 
 	uintptr_t pGameFlowManagerState;
 
-	std::unordered_map<uint32_t, std::string> sCarLibraryMap;
+	//std::unordered_map<uint32_t, std::string> sCarLibraryMap;
 	std::unordered_map<uint32_t, uint32_t> sCarLibraryHandles;
+	//std::vector<uintptr_t> sCarRecords;
 	std::vector<uint32_t> sCarLibraryKeys;
 
 	uint32_t CurrentVehicle;
 
+	uint32_t CurrentVehicleCS;
+	//bool bCSVehicleIsPreset;
+	char sCurrentVehicleTypeCS[128];
+
 	bool bWasInPostRace;
 	bool bWasBossCanyonRace;
+	bool bChallengeRace;
 	bool bInPostBossFlow;
 
 	bool bQueueEAXRefreshFromNIS;
@@ -69,6 +84,37 @@ namespace CarRandomizer
 			return 1;
 
 		return reinterpret_cast<unsigned int(*)(int)>(p_bRandom)(range);
+	}
+
+	static const char* GetPVehicleNameByKey(uint32_t k)
+	{
+		Attrib_Instance instance = { 0 };
+		reinterpret_cast<void(__thiscall*)(Attrib_Instance*, unsigned int, unsigned int)>(pAttribGenPVehicle)(&instance, k, 0);
+
+		uintptr_t layout = reinterpret_cast<uintptr_t>(instance.mLayoutPtr);
+		return *reinterpret_cast<char**>(layout + 0x24);
+	}
+
+	//static const char* GetPresetRideNameByKey(uint32_t k)
+	//{
+	//	Attrib_Instance instance = { 0 };
+	//	reinterpret_cast<void(__thiscall*)(Attrib_Instance*, unsigned int, unsigned int)>(pAttribGenPresetRide)(&instance, k, 0);
+	//
+	//	uintptr_t layout = reinterpret_cast<uintptr_t>(instance.mLayoutPtr);
+	//	return *reinterpret_cast<char**>(layout + 0xC);
+	//}
+
+	static uint32_t TryGetPresetKey(uintptr_t carRecord)
+	{
+		if (!*reinterpret_cast<bool*>(carRecord + 0x16))
+			return 0;
+
+		return *reinterpret_cast<uint32_t*>(carRecord + 0xC);
+	}
+
+	static uint32_t TryGetVehicleKey(uintptr_t carRecord)
+	{
+		return *reinterpret_cast<uint32_t*>(carRecord + 0x8);
 	}
 
 	//static HRESULT WINAPI SHGetFolderPathA_Game(HWND hwnd, int csidl, HANDLE hToken, DWORD dwFlags, LPSTR pszPath)
@@ -104,12 +150,15 @@ namespace CarRandomizer
 				bQueueEAXRefreshFromNIS = true;
 			else
 				EAXSound::Refresh();
+
+			// delay speech updates by 15 seconds because it may make the game unstable...
+			nextSpeechExecution = std::chrono::steady_clock::now() + std::chrono::seconds(15);
 		}
 	}
 
 	static void SetVehicle(uint32_t key)
 	{
-		SetVehicle(sCarLibraryMap[key].c_str());
+		SetVehicle(GetPVehicleNameByKey(key));
 		DALCareer_SetCar(sCarLibraryHandles[key]);
 	}
 
@@ -131,6 +180,12 @@ namespace CarRandomizer
 
 	static void SetRandomVehicle()
 	{
+		if (bChallengeRace)
+		{
+			bChallengeRace = false;
+			return;
+		}
+
 #ifdef _DEBUG
 		SetVehicle(DebugCars[DebugCarCounter]);
 		DebugCarCounter++;
@@ -151,6 +206,7 @@ namespace CarRandomizer
 		bWasInPostRace = false;
 		bWasBossCanyonRace = false;
 		bInPostBossFlow = false;
+		
 	}
 
 	//
@@ -296,6 +352,7 @@ namespace CarRandomizer
 		std::vector<uint32_t> CarKeys;
 		std::vector<uintptr_t> CarRecords;
 
+		//sCarRecords.clear();
 		//sCarLibrary.clear();
 
 		for (int i = 0; i < maxCarRecords; i++)
@@ -312,7 +369,7 @@ namespace CarRandomizer
 			CarRecords.push_back(carRecord);
 		}
 
-		sCarLibraryMap.clear();
+		//sCarLibraryMap.clear();
 		sCarLibraryKeys.clear();
 		sCarLibraryHandles.clear();
 
@@ -323,14 +380,8 @@ namespace CarRandomizer
 
 			int handle = *reinterpret_cast<int*>(carRecord);
 
-			Attrib_Instance instance = { 0 };
-			reinterpret_cast<void(__thiscall*)(Attrib_Instance*, unsigned int, unsigned int)>(pAttribGenPVehicle)(&instance, k, 0);
-
-			uintptr_t layout = reinterpret_cast<uintptr_t>(instance.mLayoutPtr);
-			char* CollectionName = *reinterpret_cast<char**>(layout + 0x24);
-
 			sCarLibraryKeys.push_back(k);
-			sCarLibraryMap[k] = CollectionName;
+			//sCarLibraryMap[k] = GetPVehicleNameByKey(k);
 			sCarLibraryHandles[k] = handle;
 		}
 
@@ -561,6 +612,26 @@ namespace CarRandomizer
 		}
 	}
 
+	static bool ShouldDelaySpeechUpdate()
+	{
+		auto currentTime = std::chrono::steady_clock::now();
+
+		if (currentTime >= nextSpeechExecution)
+			return false;
+
+		return true;
+	}
+
+	static void Speech_Manager_Update_Hook(float dT)
+	{
+		auto currentTime = std::chrono::steady_clock::now();
+
+		if (ShouldDelaySpeechUpdate())
+			return;
+
+		return reinterpret_cast<void(*)(int)>(pSpeech_Manager_Update)(dT);
+	}
+
 #pragma runtime_checks("", off)
 
 	static int __stdcall GRaceStatus_GetRacerCount_Hook()
@@ -582,6 +653,10 @@ namespace CarRandomizer
 		int mRacerCount = *reinterpret_cast<int*>(that + offRacerCount);
 		GRacerInfo* mRacerInfo = reinterpret_cast<GRacerInfo*>(that + offRacerInfos);
 		
+		// no need to check any further if it's the only one...
+		if (mRacerCount == 1)
+			return reinterpret_cast<int(__thiscall*)(uintptr_t)>(pGRaceStatus_GetRacerCount)(that);
+
 		// racer validation must be put in place in order to avoid crashes
 		// the game creates a new player when the car switches, this ensures that it never happens
 		// sadly, the tutorial is still broken...
@@ -620,7 +695,54 @@ namespace CarRandomizer
 		// check if this was a boss canyon duel
 		bWasBossCanyonRace = IsCanyonBossDuel(that);
 
+		bChallengeRace = reinterpret_cast<bool(__thiscall*)(uintptr_t)>(pGRaceParameters_GetIsChallengeSeriesRace)(that);
+
 		return reinterpret_cast<const char*(__thiscall*)(uintptr_t)>(pGRaceParameters_GetEventID)(that);
+	}
+
+	static const char* __stdcall GRaceParameters_GetPlayerCarType_Hook()
+	{
+		uintptr_t that;
+		_asm mov that, ecx
+
+		bChallengeRace = reinterpret_cast<bool(__thiscall*)(uintptr_t)>(pGRaceParameters_GetIsChallengeSeriesRace)(that);
+
+		if (!bChallengeRace)
+			return reinterpret_cast<const char* (__thiscall*)(uintptr_t)>(pGRaceParameters_GetPlayerCarType)(that);
+		
+		//unsigned int index = bRandom(sCarLibraryKeys.size());
+		//CurrentVehicleCS = sCarLibraryKeys[index];
+
+		return GetPVehicleNameByKey(CurrentVehicleCS);
+	}
+
+	static uint32_t __stdcall GRaceParameters_GetPlayerCarTypeHash_Hook()
+	{
+		uintptr_t that;
+		_asm mov that, ecx
+
+		bChallengeRace = reinterpret_cast<bool(__thiscall*)(uintptr_t)>(pGRaceParameters_GetIsChallengeSeriesRace)(that);
+
+		if (!bChallengeRace)
+			return reinterpret_cast<uint32_t(__thiscall*)(uintptr_t)>(pGRaceParameters_GetPlayerCarTypeHash)(that);
+
+		unsigned int index = bRandom(sCarLibraryKeys.size());
+		CurrentVehicleCS = sCarLibraryKeys[index];
+
+		return CurrentVehicleCS;
+	}
+
+	static bool __stdcall GRaceParameters_GetUsePresetRide_Hook()
+	{
+		uintptr_t that;
+		_asm mov that, ecx
+	
+		bChallengeRace = reinterpret_cast<bool(__thiscall*)(uintptr_t)>(pGRaceParameters_GetIsChallengeSeriesRace)(that);
+	
+		if (!bChallengeRace)
+			return reinterpret_cast<bool(__thiscall*)(uintptr_t)>(pGRaceParameters_GetUsePresetRide)(that);
+	
+		return false;
 	}
 
 	static void __stdcall GameFlowManager_LoadFrontend_Hook()
@@ -629,6 +751,7 @@ namespace CarRandomizer
 		_asm mov that, ecx
 
 		bWasInPostRace = false;
+		bChallengeRace = false;
 
 		return reinterpret_cast<void(__thiscall*)(uintptr_t)>(pGameFlowManager_LoadFrontend)(that);
 	}
@@ -639,6 +762,7 @@ namespace CarRandomizer
 	{
 		uintptr_t loc_6B7957 = 0x6B7957;
 		uintptr_t loc_423031 = 0x423031;
+		//uintptr_t loc_4D180F = 0x4D180F;
 		uintptr_t loc_555A0A = 0x555A0A;
 		uintptr_t loc_5CD04D = 0x5CD04D;
 		uintptr_t loc_66A55E = 0x66A55E;
@@ -651,6 +775,12 @@ namespace CarRandomizer
 		uintptr_t loc_4CB390 = 0x4CB390;
 		uintptr_t loc_64145F = 0x64145F;
 		uintptr_t loc_6DBC83 = 0x6DBC83;
+		uintptr_t loc_6459AD = 0x6459AD;
+		uintptr_t loc_52228D = 0x52228D;
+
+		uintptr_t loc_765780 = 0x765780;
+		uintptr_t loc_7657A1 = 0x7657A1;
+		uintptr_t loc_64577D = 0x64577D;
 
 
 		pGetTicker = static_cast<uintptr_t>(injector::GetBranchDestination(loc_6B7957));
@@ -658,6 +788,7 @@ namespace CarRandomizer
 
 
 		pAttribGenPVehicle = static_cast<uintptr_t>(injector::GetBranchDestination(loc_423031));
+		//pAttribGenPresetRide = static_cast<uintptr_t>(injector::GetBranchDestination(loc_4D180F));
 		p_bRandom = static_cast<uintptr_t>(injector::GetBranchDestination(loc_555A0A));
 
 		pGameFlowManagerState = *reinterpret_cast<uintptr_t*>(loc_5CD04D + 2);
@@ -677,14 +808,27 @@ namespace CarRandomizer
 		pGRaceStatus_GetRacerCount = static_cast<uintptr_t>(injector::GetBranchDestination(loc_668F1E));
 		injector::MakeCALL(loc_668F1E, GRaceStatus_GetRacerCount_Hook);
 
+		pGRaceParameters_GetPlayerCarType = static_cast<uintptr_t>(injector::GetBranchDestination(loc_765780));
+		injector::MakeCALL(loc_765780, GRaceParameters_GetPlayerCarType_Hook);
+
+		pGRaceParameters_GetPlayerCarTypeHash = static_cast<uintptr_t>(injector::GetBranchDestination(loc_64577D));
+		injector::MakeCALL(loc_64577D, GRaceParameters_GetPlayerCarTypeHash_Hook);
+
+		pGRaceParameters_GetUsePresetRide = static_cast<uintptr_t>(injector::GetBranchDestination(loc_7657A1));
+		injector::MakeCALL(loc_7657A1, GRaceParameters_GetUsePresetRide_Hook);
+
 		pGRaceParameters_GetEventID = static_cast<uintptr_t>(injector::GetBranchDestination(loc_65610B));
 		injector::MakeCALL(loc_65610B, GRaceParameters_GetEventID_Hook);
 
 		pGameFlowManager_LoadFrontend = static_cast<uintptr_t>(injector::GetBranchDestination(loc_6DBC83));
 		injector::MakeCALL(loc_6DBC83, GameFlowManager_LoadFrontend_Hook);
 
+		pSpeech_Manager_Update = static_cast<uintptr_t>(injector::GetBranchDestination(loc_52228D));
+		injector::MakeCALL(loc_52228D, Speech_Manager_Update_Hook);
+
 		pGRaceParameters_GetRaceType = static_cast<uintptr_t>(injector::GetBranchDestination(loc_4CB390));
 		pGRaceParameters_GetIsBossRace = static_cast<uintptr_t>(injector::GetBranchDestination(loc_64145F));
+		pGRaceParameters_GetIsChallengeSeriesRace = static_cast<uintptr_t>(injector::GetBranchDestination(loc_6459AD));
 
 		//uintptr_t ppGetFolder = *reinterpret_cast<uintptr_t*>(loc_7166AA + 2);
 		//p_SHGetFolderPathA = *reinterpret_cast<uintptr_t*>(ppGetFolder);
@@ -698,6 +842,8 @@ namespace CarRandomizer
 		
 
 		GetCarList();
+
+		nextSpeechExecution = std::chrono::steady_clock::now();
 
 		//strcpy_s(testVehicleName, "viper");
 
