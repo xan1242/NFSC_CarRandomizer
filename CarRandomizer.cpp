@@ -593,6 +593,7 @@ namespace CarRandomizer
 		bWasBossCanyonRace = IsCanyonBossDuel(that);
 
 		bChallengeRace = reinterpret_cast<bool(__thiscall*)(uintptr_t)>(pGRaceParameters_GetIsChallengeSeriesRace)(that);
+		bWasInPostRace = false;
 
 		return reinterpret_cast<const char*(__thiscall*)(uintptr_t)>(pGRaceParameters_GetEventID)(that);
 	}
