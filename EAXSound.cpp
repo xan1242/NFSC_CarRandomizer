@@ -12,7 +12,7 @@ namespace EAXSound
 	//uintptr_t pStartNewGamePlay;
 	//uintptr_t pLoadInGameSoundBanks;
 	//uintptr_t pCommitAssets;
-	uintptr_t pReStartRace;
+	//uintptr_t pReStartRace;
 	//uintptr_t pInitializeInGame;
 	//uintptr_t pMixMapReadyCallback;
 	//uintptr_t pLoadCommonIngameFiles;
@@ -28,7 +28,7 @@ namespace EAXSound
 
 	//uintptr_t p_gb_DORESTART_RACE;
 
-	static uintptr_t Get()
+	uintptr_t Get()
 	{
 		if (!ppEAXSound)
 			return 0;
@@ -68,13 +68,13 @@ namespace EAXSound
 	//	reinterpret_cast<void(__thiscall*)(uintptr_t)>(pCommitAssets)(instance);
 	//}
 
-	static void ReStartRace(uintptr_t instance, bool bIs321)
-	{
-		if (!pReStartRace)
-			return;
-
-		reinterpret_cast<void(__thiscall*)(uintptr_t, bool)>(pReStartRace)(instance, bIs321);
-	}
+	//static void ReStartRace(uintptr_t instance, bool bIs321)
+	//{
+	//	if (!pReStartRace)
+	//		return;
+	//
+	//	reinterpret_cast<void(__thiscall*)(uintptr_t, bool)>(pReStartRace)(instance, bIs321);
+	//}
 
 	//static void InitializeInGame(uintptr_t instance)
 	//{
@@ -170,7 +170,7 @@ namespace EAXSound
 		if (!pAreResourceLoadsPending)
 			return false;
 
-		reinterpret_cast<bool(__thiscall*)(uintptr_t)>(pAreResourceLoadsPending)(instance);
+		return reinterpret_cast<bool(__thiscall*)(uintptr_t)>(pAreResourceLoadsPending)(instance);
 	}
 
 	void Refresh()
@@ -226,7 +226,7 @@ namespace EAXSound
 		uintptr_t loc_6B7C89 = 0x6B7C89;
 		//uintptr_t loc_66C755 = 0x66C755;
 		//uintptr_t loc_52328F = 0x52328F;
-		uintptr_t loc_67DB9A = 0x67DB9A;
+		//uintptr_t loc_67DB9A = 0x67DB9A;
 		//uintptr_t loc_522157 = 0x522157;
 		//uintptr_t loc_522168 = 0x522168;
 		uintptr_t loc_6B5B09 = 0x6B5B09;
@@ -244,7 +244,7 @@ namespace EAXSound
 		//pStartNewGamePlay = static_cast<uintptr_t>(injector::GetBranchDestination(loc_6699D2));
 		//pLoadInGameSoundBanks = static_cast<uintptr_t>(injector::GetBranchDestination(loc_523549));
 		//pCommitAssets = static_cast<uintptr_t>(injector::GetBranchDestination(loc_66C755));
-		pReStartRace = static_cast<uintptr_t>(injector::GetBranchDestination(loc_67DB9A));
+		//pReStartRace = static_cast<uintptr_t>(injector::GetBranchDestination(loc_67DB9A));
 		//pInitializeInGame = static_cast<uintptr_t>(injector::GetBranchDestination(loc_522157));
 		//pMixMapReadyCallback = static_cast<uintptr_t>(injector::GetBranchDestination(loc_522168));
 		pUnloadAemsInGame = static_cast<uintptr_t>(injector::GetBranchDestination(loc_6B7C89));

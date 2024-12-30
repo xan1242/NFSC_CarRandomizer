@@ -494,6 +494,23 @@ namespace CarRandomizer
 		}
 	}
 
+	uintptr_t loc_452C0C;
+	uintptr_t loc_452B9B;
+	static void __declspec(naked) hkNISListenerActivitySomething()
+	{
+		_asm
+		{
+			test eax, eax
+			jz epMissingVehicleNLAS
+			mov edx, [eax]
+			mov ecx, eax
+			call dword ptr [edx + 0xC0]
+			jmp [loc_452B9B]
+		epMissingVehicleNLAS:
+			jmp [loc_452C0C]
+		}
+	}
+
 	static bool ShouldDelaySpeechUpdate()
 	{
 		auto currentTime = std::chrono::steady_clock::now();
@@ -662,6 +679,9 @@ namespace CarRandomizer
 		uintptr_t loc_7657A1 = 0x7657A1;
 		uintptr_t loc_64577D = 0x64577D;
 
+		loc_452C0C = 0x452C0C;
+		loc_452B9B = 0x452B9B;
+		uintptr_t loc_452B91 = 0x452B91;
 
 		pGetTicker = static_cast<uintptr_t>(injector::GetBranchDestination(loc_6B7957));
 		injector::MakeCALL(loc_6B7957, GetTicker_Hook);
@@ -684,6 +704,8 @@ namespace CarRandomizer
 
 		injector::MakeNOP(loc_641168 + 5);
 		injector::MakeCALL(loc_641168, hkGetWinningPlayerInfo);
+
+		injector::MakeJMP(loc_452B91, hkNISListenerActivitySomething);
 
 		pGRaceStatus_GetRacerCount = static_cast<uintptr_t>(injector::GetBranchDestination(loc_668F1E));
 		injector::MakeCALL(loc_668F1E, GRaceStatus_GetRacerCount_Hook);
