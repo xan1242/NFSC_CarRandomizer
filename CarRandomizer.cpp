@@ -624,8 +624,6 @@ namespace CarRandomizer
 
 	static void Speech_Manager_Update_Hook(float dT)
 	{
-		auto currentTime = std::chrono::steady_clock::now();
-
 		if (ShouldDelaySpeechUpdate())
 			return;
 
