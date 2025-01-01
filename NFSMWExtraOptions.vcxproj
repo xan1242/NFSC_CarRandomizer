@@ -106,6 +106,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CarRandomizer.hpp" />
+    <ClInclude Include="CompileTimeHash.hpp" />
     <ClInclude Include="DebugVehicleSelection.hpp" />
     <ClInclude Include="EAXSound.hpp" />
     <ClInclude Include="FEPlayerCarDB.hpp" />

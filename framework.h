@@ -3,6 +3,7 @@
 #define NOMINMAX
 #define USEMATHDEFINES
 #include <windows.h>
+#include "CompileTimeHash.hpp"
 
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved);

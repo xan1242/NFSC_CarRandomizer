@@ -25,6 +25,18 @@ namespace CarRandomizer
 		unsigned int mFlags;
 	};
 
+	void SetExcludeTrafficCars(bool state);
+	bool GetExcludeTrafficCars();
+
+	void SetIncludeTrafficSemis(bool state);
+	bool GetIncludeTrafficSemis();
+
+	void SetExcludeCopCars(bool state);
+	bool GetExcludeCopCars();
+
+	void SetExcludeRegularCars(bool state);
+	bool GetExcludeRegularCars();
+
 	void Init();
 }
 

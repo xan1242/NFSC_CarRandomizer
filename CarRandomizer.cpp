@@ -55,11 +55,64 @@ namespace CarRandomizer
 	//std::vector<uintptr_t> sCarRecords;
 	std::vector<uint32_t> sCarLibraryKeys;
 
+	const uint32_t sTrafficCarLibraryKeys[] =
+	{
+		STRINGHASH32("cs_semi"), // this one is safe to use...
+
+		STRINGHASH32("traf4dseda"),
+		STRINGHASH32("traf4dsedb"),
+		STRINGHASH32("traf4dsedc"),
+		STRINGHASH32("trafcourt"),
+		STRINGHASH32("trafficcoup"),
+		STRINGHASH32("trafha"),
+		STRINGHASH32("trafstwag"),
+		STRINGHASH32("traftaxi"),
+
+		STRINGHASH32("trafamb"),
+		STRINGHASH32("trafcemtr"),
+		STRINGHASH32("trafdmptr"),
+		STRINGHASH32("traffire"),
+		STRINGHASH32("trafgarb"),
+
+		STRINGHASH32("trafcamper"),
+		STRINGHASH32("trafminivan"),
+		STRINGHASH32("trafnews"),
+		STRINGHASH32("trafpickupa"),
+		STRINGHASH32("trafsuva"),
+		STRINGHASH32("trafvanb"),
+	};
+
+	const uint32_t sTrafficSemiLibraryKeys[] =
+	{
+		STRINGHASH32("semia"),
+		STRINGHASH32("semib"),
+		STRINGHASH32("semibox"),
+		STRINGHASH32("semicmt"),
+		STRINGHASH32("semicon"),
+		STRINGHASH32("semicrate"),
+		STRINGHASH32("semilog"),
+	};
+
+	const uint32_t sCopCarLibraryKeys[] =
+	{
+		STRINGHASH32("copgto"),
+		STRINGHASH32("copgtoghost"),
+		STRINGHASH32("copmidsize"),
+		STRINGHASH32("copghost"),
+		STRINGHASH32("copsport"),
+		STRINGHASH32("copcross"),
+		STRINGHASH32("copsportghost"),
+		STRINGHASH32("copsporthench"),
+		STRINGHASH32("copsuv"),
+		STRINGHASH32("copsuvpatrol"),
+		STRINGHASH32("copsuvl"),
+	};
+
 	uint32_t CurrentVehicle;
 
 	uint32_t CurrentVehicleCS;
 	//bool bCSVehicleIsPreset;
-	char sCurrentVehicleTypeCS[128];
+	//char sCurrentVehicleTypeCS[128];
 
 	bool bWasInPostRace;
 	bool bWasBossCanyonRace;
@@ -67,6 +120,51 @@ namespace CarRandomizer
 	bool bInPostBossFlow;
 
 	bool bQueueEAXRefreshFromNIS;
+
+	bool bExcludeTrafficCars;
+	bool bIncludeTrafficSemis;
+	bool bExcludeCopCars;
+	bool bExcludeRegularCars;
+
+	void SetExcludeTrafficCars(bool state)
+	{
+		bExcludeTrafficCars = state;
+	}
+
+	bool GetExcludeTrafficCars()
+	{
+		return bExcludeTrafficCars;
+	}
+
+	void SetIncludeTrafficSemis(bool state)
+	{
+		bIncludeTrafficSemis = state;
+	}
+
+	bool GetIncludeTrafficSemis()
+	{
+		return bIncludeTrafficSemis;
+	}
+
+	void SetExcludeCopCars(bool state)
+	{
+		bExcludeCopCars = state;
+	}
+
+	bool GetExcludeCopCars()
+	{
+		return bExcludeCopCars;
+	}
+
+	void SetExcludeRegularCars(bool state)
+	{
+		bExcludeRegularCars = state;
+	}
+
+	bool GetExcludeRegularCars()
+	{
+		return bExcludeRegularCars;
+	}
 
 	static int GetGameFlowManagerState()
 	{
@@ -130,6 +228,25 @@ namespace CarRandomizer
 		return reinterpret_cast<bool(__stdcall*)(int)>(pDALCareer_SetCar)(handle);
 	}
 
+	static int InjectDebugVehicle(uint32_t key)
+	{
+		uintptr_t profile = UserProfile::Get(0);
+
+		if (!profile)
+			return 0x12345678;
+
+		uintptr_t mCarStable = UserProfile::GetCarStable(profile);
+		uintptr_t carRecord = FEPlayerCarDB::GetCarByIndex(mCarStable, 0);
+
+		int handle = *reinterpret_cast<int*>(carRecord);
+
+		*reinterpret_cast<uint32_t*>(carRecord + 4) = STRINGHASH32("uncustomizable");
+		*reinterpret_cast<uint32_t*>(carRecord + 8) = key;
+		*reinterpret_cast<uint8_t*>(carRecord + 0x10) = 0xFF;
+
+		return handle;
+	}
+
 	static void SetVehicle(const char* vehicleName)
 	{
 		if (GetGameFlowManagerState() != 6)
@@ -156,7 +273,13 @@ namespace CarRandomizer
 	static void SetVehicle(uint32_t key)
 	{
 		SetVehicle(GetPVehicleNameByKey(key));
-		DALCareer_SetCar(sCarLibraryHandles[key]);
+
+		if (sCarLibraryHandles.find(key) != sCarLibraryHandles.end())
+			DALCareer_SetCar(sCarLibraryHandles[key]);
+		else
+		{
+			DALCareer_SetCar(InjectDebugVehicle(key));
+		}
 	}
 
 #ifdef _DEBUG
@@ -164,11 +287,13 @@ namespace CarRandomizer
 
 	const uint32_t DebugCars[] =
 	{
-		0x950F8F92, // player_cop_gto
-		0x655FEEBD, // darius
-		0xAD54F689, // zonda
-		0xE4DB67B3, // murcielago640
-		0xB336162E, // player_cop_corvette
+		//STRINGHASH32("player_cop_gto"),
+		//STRINGHASH32("darius"),
+		//STRINGHASH32("zonda"),
+		//STRINGHASH32("murcielago640"),
+		//STRINGHASH32("player_cop_corvette"),
+		STRINGHASH32("copcross"),
+		STRINGHASH32("copgto"),
 	};
 
 	int DebugCarCounter = 0;
@@ -227,6 +352,10 @@ namespace CarRandomizer
 		if (!profile)
 			return;
 
+		// failsafe
+		if (bExcludeRegularCars && bExcludeTrafficCars && bExcludeCopCars)
+			bExcludeRegularCars = false;
+
 		uintptr_t mCarStable = UserProfile::GetCarStable(profile);
 
 		size_t maxCarRecords = FEPlayerCarDB::GetNumCarRecords();
@@ -255,16 +384,37 @@ namespace CarRandomizer
 		sCarLibraryKeys.clear();
 		sCarLibraryHandles.clear();
 
-		for (int i = 0; i < CarKeys.size(); i++)
+		if (!bExcludeRegularCars)
 		{
-			uint32_t k = CarKeys[i];
-			uintptr_t carRecord = CarRecords[i];
+			for (int i = 0; i < CarKeys.size(); i++)
+			{
+				uint32_t k = CarKeys[i];
+				uintptr_t carRecord = CarRecords[i];
 
-			int handle = *reinterpret_cast<int*>(carRecord);
+				int handle = *reinterpret_cast<int*>(carRecord);
 
-			sCarLibraryKeys.push_back(k);
-			//sCarLibraryMap[k] = GetPVehicleNameByKey(k);
-			sCarLibraryHandles[k] = handle;
+				sCarLibraryKeys.push_back(k);
+				//sCarLibraryMap[k] = GetPVehicleNameByKey(k);
+				sCarLibraryHandles[k] = handle;
+			}
+		}
+
+		if (!bExcludeTrafficCars)
+		{
+			for (const uint32_t& k : sTrafficCarLibraryKeys)
+				sCarLibraryKeys.push_back(k);
+
+			if (bIncludeTrafficSemis)
+				for (const uint32_t& k : sTrafficSemiLibraryKeys)
+					sCarLibraryKeys.push_back(k);
+
+		}
+
+
+		if (!bExcludeCopCars)
+		{
+			for (const uint32_t& k : sCopCarLibraryKeys)
+				sCarLibraryKeys.push_back(k);
 		}
 
 	}
