@@ -13,6 +13,7 @@
 #include <fstream>
 #include <filesystem>
 #include <chrono>
+#include <random>
 #include <shlobj_core.h>
 
 //
@@ -33,7 +34,7 @@ namespace CarRandomizer
 	uintptr_t pGameFlowManager_LoadFrontend;
 	uintptr_t pAttribGenPVehicle;
 	//uintptr_t pAttribGenPresetRide;
-	uintptr_t p_bRandom;
+	//uintptr_t p_bRandom;
 	//uintptr_t p_SHGetFolderPathA;
 	uintptr_t pDALCareer_SetCar;
 	uintptr_t pGRaceStatus_GetRacerCount;
@@ -173,13 +174,25 @@ namespace CarRandomizer
 		return *reinterpret_cast<int*>(pGameFlowManagerState);
 	}
 
-	static unsigned int bRandom(int range)
-	{
-		if (!p_bRandom)
-			return 1;
+	static unsigned int bRandom(unsigned int max) {
+		// Create a random device and seed the random number generator
+		std::random_device rd;
+		std::mt19937 gen(rd());
 
-		return reinterpret_cast<unsigned int(*)(int)>(p_bRandom)(range);
+		// Create a uniform distribution in the specified range
+		std::uniform_int_distribution<unsigned int> dis(0, max);
+
+		// Generate and return the random number
+		return dis(gen);
 	}
+
+	//static unsigned int bRandom(int range)
+	//{
+	//	if (!p_bRandom)
+	//		return 1;
+	//
+	//	return reinterpret_cast<unsigned int(*)(int)>(p_bRandom)(range);
+	//}
 
 	static const char* GetPVehicleNameByKey(uint32_t k)
 	{
@@ -811,7 +824,7 @@ namespace CarRandomizer
 		uintptr_t loc_6B7957 = 0x6B7957;
 		uintptr_t loc_423031 = 0x423031;
 		//uintptr_t loc_4D180F = 0x4D180F;
-		uintptr_t loc_555A0A = 0x555A0A;
+		//uintptr_t loc_555A0A = 0x555A0A;
 		uintptr_t loc_5CD04D = 0x5CD04D;
 		uintptr_t loc_66A55E = 0x66A55E;
 		uintptr_t loc_66A9E8 = 0x66A9E8;
@@ -840,7 +853,7 @@ namespace CarRandomizer
 
 		pAttribGenPVehicle = static_cast<uintptr_t>(injector::GetBranchDestination(loc_423031));
 		//pAttribGenPresetRide = static_cast<uintptr_t>(injector::GetBranchDestination(loc_4D180F));
-		p_bRandom = static_cast<uintptr_t>(injector::GetBranchDestination(loc_555A0A));
+		//p_bRandom = static_cast<uintptr_t>(injector::GetBranchDestination(loc_555A0A));
 
 		pGameFlowManagerState = *reinterpret_cast<uintptr_t*>(loc_5CD04D + 2);
 
