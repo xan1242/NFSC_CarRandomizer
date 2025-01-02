@@ -32,6 +32,10 @@ namespace CarRandomizer
 	uintptr_t pGame_RaceDone;
 	uintptr_t pGame_DoPostBossFlow;
 	uintptr_t pGame_JumpToSafeHouse;
+
+	uintptr_t pDALPauseStates_IsPaused;
+	uintptr_t pDALPauseStates_RequestUnPause;
+
 	uintptr_t pGameFlowManager_UnloadTrack;
 	uintptr_t pAttribGenPVehicle;
 	//uintptr_t pAttribGenPresetRide;
@@ -346,6 +350,24 @@ namespace CarRandomizer
 		
 	}
 
+	static void HandleEmergencyReset()
+	{
+		if (((GetAsyncKeyState(VK_RCONTROL) & 0x8000) || (GetAsyncKeyState(VK_LCONTROL) & 0x8000)) && (GetAsyncKeyState(VK_F9) & 0x8000))
+		{
+			if (*reinterpret_cast<int*>(pGameFlowManagerState) == 6)
+			{
+				bWasInPostRace = false;
+				bChallengeRace = false;
+
+				bool bPaused = reinterpret_cast<bool(*)()>(pDALPauseStates_IsPaused)();
+				if (bPaused)
+					reinterpret_cast<void(*)()>(pDALPauseStates_RequestUnPause)();
+
+				reinterpret_cast<void(*)()>(pGame_JumpToSafeHouse)();
+			}
+		}
+	}
+
 	static void HandleMainLoop()
 	{
 		if (bQueueEAXRefreshFromNIS)
@@ -358,17 +380,7 @@ namespace CarRandomizer
 			}
 		}
 
-		if (((GetAsyncKeyState(VK_RCONTROL) & 0x8000) || (GetAsyncKeyState(VK_LCONTROL) & 0x8000)) && (GetAsyncKeyState(VK_F9) & 0x8000))
-		{
-			if (*reinterpret_cast<int*>(pGameFlowManagerState) == 6)
-			{
-				bWasInPostRace = false;
-				bChallengeRace = false;
-
-				reinterpret_cast<void(*)()>(pGame_JumpToSafeHouse)();
-			}
-		}
-
+		HandleEmergencyReset();
 	}
 
 	static void GetCarList()
@@ -854,6 +866,9 @@ namespace CarRandomizer
 		uintptr_t loc_52228D = 0x52228D;
 		uintptr_t loc_66A4CB = 0x66A4CB;
 
+		uintptr_t loc_5A0FB6 = 0x5A0FB6;
+		uintptr_t loc_5A0FBF = 0x5A0FBF;
+
 		uintptr_t loc_765780 = 0x765780;
 		uintptr_t loc_7657A1 = 0x7657A1;
 		uintptr_t loc_64577D = 0x64577D;
@@ -918,6 +933,9 @@ namespace CarRandomizer
 		//p_SHGetFolderPathA = *reinterpret_cast<uintptr_t*>(ppGetFolder);
 
 		pDALCareer_SetCar = static_cast<uintptr_t>(injector::GetBranchDestination(loc_4D98D0));
+
+		pDALPauseStates_IsPaused = static_cast<uintptr_t>(injector::GetBranchDestination(loc_5A0FB6));
+		pDALPauseStates_RequestUnPause = static_cast<uintptr_t>(injector::GetBranchDestination(loc_5A0FBF));
 		
 		FEPostRaceStateManager::Init();
 		FECarClassSelectStateManager::Init();
