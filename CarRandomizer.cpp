@@ -31,7 +31,8 @@ namespace CarRandomizer
 
 	uintptr_t pGame_RaceDone;
 	uintptr_t pGame_DoPostBossFlow;
-	uintptr_t pGameFlowManager_LoadFrontend;
+	uintptr_t pGame_JumpToSafeHouse;
+	uintptr_t pGameFlowManager_UnloadTrack;
 	uintptr_t pAttribGenPVehicle;
 	//uintptr_t pAttribGenPresetRide;
 	//uintptr_t p_bRandom;
@@ -49,6 +50,7 @@ namespace CarRandomizer
 	std::chrono::steady_clock::time_point nextSpeechExecution;
 	uintptr_t pSpeech_Manager_Update;
 
+	uintptr_t pGameFlowManager;
 	uintptr_t pGameFlowManagerState;
 
 	//std::unordered_map<uint32_t, std::string> sCarLibraryMap;
@@ -355,6 +357,18 @@ namespace CarRandomizer
 					EAXSound::Refresh();
 			}
 		}
+
+		if (((GetAsyncKeyState(VK_RCONTROL) & 0x8000) || (GetAsyncKeyState(VK_LCONTROL) & 0x8000)) && (GetAsyncKeyState(VK_F9) & 0x8000))
+		{
+			if (*reinterpret_cast<int*>(pGameFlowManagerState) == 6)
+			{
+				bWasInPostRace = false;
+				bChallengeRace = false;
+
+				reinterpret_cast<void(*)()>(pGame_JumpToSafeHouse)();
+			}
+		}
+
 	}
 
 	static void GetCarList()
@@ -806,7 +820,7 @@ namespace CarRandomizer
 		return false;
 	}
 
-	static void __stdcall GameFlowManager_LoadFrontend_Hook()
+	static void __stdcall GameFlowManager_UnloadTrack_Hook()
 	{
 		uintptr_t that;
 		_asm mov that, ecx
@@ -814,7 +828,7 @@ namespace CarRandomizer
 		bWasInPostRace = false;
 		bChallengeRace = false;
 
-		return reinterpret_cast<void(__thiscall*)(uintptr_t)>(pGameFlowManager_LoadFrontend)(that);
+		return reinterpret_cast<void(__thiscall*)(uintptr_t)>(pGameFlowManager_UnloadTrack)(that);
 	}
 
 #pragma runtime_checks("", restore)
@@ -835,9 +849,10 @@ namespace CarRandomizer
 		uintptr_t loc_65610B = 0x65610B;
 		uintptr_t loc_4CB390 = 0x4CB390;
 		uintptr_t loc_64145F = 0x64145F;
-		uintptr_t loc_6DBC83 = 0x6DBC83;
+		uintptr_t loc_5A0F9B = 0x5A0F9B;
 		uintptr_t loc_6459AD = 0x6459AD;
 		uintptr_t loc_52228D = 0x52228D;
+		uintptr_t loc_66A4CB = 0x66A4CB;
 
 		uintptr_t loc_765780 = 0x765780;
 		uintptr_t loc_7657A1 = 0x7657A1;
@@ -856,6 +871,7 @@ namespace CarRandomizer
 		//p_bRandom = static_cast<uintptr_t>(injector::GetBranchDestination(loc_555A0A));
 
 		pGameFlowManagerState = *reinterpret_cast<uintptr_t*>(loc_5CD04D + 2);
+		pGameFlowManager = pGameFlowManagerState - 8;
 
 		//pEventSysAllocate = static_cast<uintptr_t>(injector::GetBranchDestination(loc_66997A));
 		//pECommitAudioAssets = static_cast<uintptr_t>(injector::GetBranchDestination(loc_669994));
@@ -865,6 +881,8 @@ namespace CarRandomizer
 
 		pGame_DoPostBossFlow = *reinterpret_cast<uintptr_t*>(loc_66A9E8 + 1);
 		injector::WriteMemory(loc_66A9E8 + 1, &Game_DoPostBossFlow_Hook, true);
+
+		pGame_JumpToSafeHouse = *reinterpret_cast<uintptr_t*>(loc_66A4CB + 1);
 
 		injector::MakeNOP(loc_641168 + 5);
 		injector::MakeCALL(loc_641168, hkGetWinningPlayerInfo);
@@ -886,8 +904,8 @@ namespace CarRandomizer
 		pGRaceParameters_GetEventID = static_cast<uintptr_t>(injector::GetBranchDestination(loc_65610B));
 		injector::MakeCALL(loc_65610B, GRaceParameters_GetEventID_Hook);
 
-		pGameFlowManager_LoadFrontend = static_cast<uintptr_t>(injector::GetBranchDestination(loc_6DBC83));
-		injector::MakeCALL(loc_6DBC83, GameFlowManager_LoadFrontend_Hook);
+		pGameFlowManager_UnloadTrack = static_cast<uintptr_t>(injector::GetBranchDestination(loc_5A0F9B));
+		injector::MakeCALL(loc_5A0F9B, GameFlowManager_UnloadTrack_Hook);
 
 		pSpeech_Manager_Update = static_cast<uintptr_t>(injector::GetBranchDestination(loc_52228D));
 		injector::MakeCALL(loc_52228D, Speech_Manager_Update_Hook);

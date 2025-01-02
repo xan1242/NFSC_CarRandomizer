@@ -21,3 +21,4 @@ NOTES/CAVEATS:
 6. Sometimes the game may crash and/or softlock in a infinite loading screen -- this is because of sounds. If you want the most stable experience, you can disable sound by either launching the game with the "-nosound" argument, or making a "nosound.txt" file next to the ASI
 7. Cops disappear after car switching - this is normal
 8. Loading screens are slightly longer. Don't be alarmed, this is normal. The sounds are being reloaded each time the car swaps.
+9. If the game gets stuck because you have totaled your car or something similar, you can try pressing Ctrl+F9 to unload the track and go back to FE instantly.
