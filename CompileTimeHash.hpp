@@ -132,18 +132,4 @@ constexpr uint32_t stringhash32(const char* str, size_t string_length)
 
 #define STRINGHASH32(str) (compiler_stringhash32<stringhash32(str, constexpr_strlen(str))>)
 
-template <uint32_t V>
-static constexpr uint32_t compiler_bStringHash = V;
-constexpr uint32_t bCompilerStringHash(const char* text) {
-    uint32_t result = 0xFFFFFFFF;
-
-    for (size_t i = 0; text[i] != '\0'; ++i) {
-        result = 33 * result + static_cast<uint32_t>(text[i]);
-    }
-
-    return result;
-}
-
-#define BSTRINGHASH(str) (compiler_bStringHash<bCompilerStringHash(str)>)
-
 #endif

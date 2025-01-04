@@ -1,6 +1,6 @@
 #include "framework.h"
 #include "EAXSound.hpp"
-#include "../includes/injector/injector.hpp"
+#include "injector/injector.hpp"
 #include <iostream>
 
 namespace EAXSound

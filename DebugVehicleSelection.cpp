@@ -1,6 +1,6 @@
 #include "framework.h"
 #include "DebugVehicleSelection.hpp"
-#include "../includes/injector/injector.hpp"
+#include "injector/injector.hpp"
 #include <iostream>
 
 namespace DebugVehicleSelection

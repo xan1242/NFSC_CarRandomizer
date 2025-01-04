@@ -5,7 +5,7 @@
 #include "FEPlayerCarDB.hpp"
 #include "EAXSound.hpp"
 #include "NIS.hpp"
-#include "../includes/injector/injector.hpp"
+#include "injector/injector.hpp"
 #include <iostream>
 #include <unordered_map>
 #include <string>

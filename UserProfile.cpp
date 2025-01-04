@@ -1,6 +1,6 @@
 #include "framework.h"
 #include "UserProfile.hpp"
-#include "../includes/injector/injector.hpp"
+#include "injector/injector.hpp"
 #include <iostream>
 
 namespace UserProfile

@@ -9,9 +9,89 @@
 
 #include <filesystem>
 
-#include "../includes/injector/injector.hpp"
+#include "injector/injector.hpp"
+#include "mINI/src/mini/ini.h"
 
 uintptr_t pInitializeEverything;
+
+static bool ReadIniBoolValue(mINI::INIStructure& ini, const std::string& section, const std::string& key, bool& val)
+{
+	if (!ini.has(section))
+		return val;
+
+	if (!ini[section].has(key))
+		return val;
+
+	// trim inline comment
+	std::string valStr = ini[section][key];
+	size_t posComment = valStr.find(';');
+	if (posComment != valStr.npos)
+	{
+		valStr = valStr.substr(0, posComment);
+		
+		// trim space
+		size_t posSpace = valStr.find(' ');
+		if (posSpace != valStr.npos)
+		{
+			valStr = valStr.substr(0, posSpace);
+		}
+	}
+
+	if (valStr == "true")
+	{
+		val = true;
+		return val;
+	}
+
+	try
+	{
+		int in_val = std::stoi(valStr, nullptr, 0);
+		val = in_val != 0;
+	}
+	catch (...)
+	{
+		return val;
+	}
+
+	return val;
+}
+
+static void InitConfig()
+{
+	std::filesystem::path iniPath = ModPath::GetThisModulePath<std::filesystem::path>().replace_extension("ini");
+
+	mINI::INIFile iniFile(iniPath);
+	mINI::INIStructure ini;
+	
+	if (!iniFile.read(ini))
+		return;
+
+	if (!ini.has("Main"))
+		return;
+
+	bool bNoSound = false;
+	bool bNoRegular = false;
+	bool bNoTraffic = false;
+	bool bNoCops = false;
+	bool bIncludeSemis = false;
+
+	ReadIniBoolValue(ini, "Main", "NoSound",      bNoSound);
+	ReadIniBoolValue(ini, "Main", "NoRegular",    bNoRegular);
+	ReadIniBoolValue(ini, "Main", "NoTraffic",    bNoTraffic);
+	ReadIniBoolValue(ini, "Main", "NoCops",       bNoCops);
+	ReadIniBoolValue(ini, "Main", "IncludeSemis", bIncludeSemis);
+
+	CarRandomizer::SetExcludeRegularCars(bNoRegular);
+	CarRandomizer::SetExcludeTrafficCars(bNoTraffic);
+	CarRandomizer::SetExcludeCopCars(bNoCops);
+	CarRandomizer::SetIncludeTrafficSemis(bIncludeSemis);
+
+	if (bNoSound)
+	{
+		uintptr_t loc_A631B8 = 0xA631B8;
+		*reinterpret_cast<int*>(loc_A631B8) = 0;
+	}
+}
 
 static void PostInit()
 {
@@ -19,6 +99,8 @@ static void PostInit()
 	freopen("CON", "wb", stdout);
 	freopen("CON", "wb", stderr);
 #endif
+
+	InitConfig();
 
 	DebugVehicleSelection::Init();
 	FEPlayerCarDB::Init();
@@ -29,177 +111,15 @@ static void PostInit()
 	CarRandomizer::Init();
 }
 
-static bool isNoSoundEnabled_Arg(int argc, char* argv[]) {
-	for (int i = 1; i < argc; ++i) 
-	{
-		if (strcmp(argv[i], "-nosound") == 0) 
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-static bool isNoTrafficCarsEnabled_Arg(int argc, char* argv[]) {
-	for (int i = 1; i < argc; ++i)
-	{
-		if (strcmp(argv[i], "-rndcars_notraffic") == 0)
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-
-static bool isTrafficSemisEnabled_Arg(int argc, char* argv[]) {
-	for (int i = 1; i < argc; ++i)
-	{
-		if (strcmp(argv[i], "-rndcars_includesemis") == 0)
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-static bool isNoCopCarsEnabled_Arg(int argc, char* argv[]) {
-	for (int i = 1; i < argc; ++i)
-	{
-		if (strcmp(argv[i], "-rndcars_nocops") == 0)
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
-static bool isNoRegularCarsEnabled_Arg(int argc, char* argv[]) {
-	for (int i = 1; i < argc; ++i)
-	{
-		if (strcmp(argv[i], "-rndcars_noregular") == 0)
-		{
-			return true;
-		}
-	}
-	return false;
-}
-
 static void InitializeEverything_Hook(int argc, char** argv)
 {
-	bool bNoSound = isNoSoundEnabled_Arg(argc, argv);
-	if (bNoSound)
-		*reinterpret_cast<int*>(0x00A631B8) = 0;
-
-	if (isNoTrafficCarsEnabled_Arg(argc, argv))
-		CarRandomizer::SetExcludeTrafficCars(true);
-
-	if (isTrafficSemisEnabled_Arg(argc, argv))
-		CarRandomizer::SetIncludeTrafficSemis(true);
-
-	if (isNoCopCarsEnabled_Arg(argc, argv))
-		CarRandomizer::SetExcludeCopCars(true);
-
-	if (isNoRegularCarsEnabled_Arg(argc, argv))
-		CarRandomizer::SetExcludeRegularCars(true);
-
 	reinterpret_cast<void(*)(int, char**)>(pInitializeEverything)(argc, argv);
 
 	PostInit();
 }
 
-static bool ShouldDisableSound()
-{
-	try
-	{
-		std::filesystem::path chkPath = ModPath::GetThisModulePath<std::filesystem::path>().parent_path();
-		chkPath /= "nosound.txt";
-
-		return std::filesystem::exists(chkPath);
-	}
-	catch (...)
-	{
-		return false;
-	}
-}
-
-static bool ShouldDisableTrafficList()
-{
-	try
-	{
-		std::filesystem::path chkPath = ModPath::GetThisModulePath<std::filesystem::path>().parent_path();
-		chkPath /= "rndcars_notraffic.txt";
-
-		return std::filesystem::exists(chkPath);
-	}
-	catch (...)
-	{
-		return false;
-	}
-}
-
-static bool ShouldEnableTrafficSemiList()
-{
-	try
-	{
-		std::filesystem::path chkPath = ModPath::GetThisModulePath<std::filesystem::path>().parent_path();
-		chkPath /= "rndcars_includesemis.txt";
-
-		return std::filesystem::exists(chkPath);
-	}
-	catch (...)
-	{
-		return false;
-	}
-}
-
-static bool ShouldDisableCopList()
-{
-	try
-	{
-		std::filesystem::path chkPath = ModPath::GetThisModulePath<std::filesystem::path>().parent_path();
-		chkPath /= "rndcars_nocops.txt";
-
-		return std::filesystem::exists(chkPath);
-	}
-	catch (...)
-	{
-		return false;
-	}
-}
-
-static bool ShouldDisableRegularList()
-{
-	try
-	{
-		std::filesystem::path chkPath = ModPath::GetThisModulePath<std::filesystem::path>().parent_path();
-		chkPath /= "rndcars_noregular.txt";
-
-		return std::filesystem::exists(chkPath);
-	}
-	catch (...)
-	{
-		return false;
-	}
-}
-
 static void PreInit()
 {
-	if (ShouldDisableSound())
-		*reinterpret_cast<int*>(0x00A631B8) = 0;
-
-	if (ShouldDisableTrafficList())
-		CarRandomizer::SetExcludeTrafficCars(true);
-
-	if (ShouldEnableTrafficSemiList())
-		CarRandomizer::SetIncludeTrafficSemis(true);
-
-	if (ShouldDisableCopList())
-		CarRandomizer::SetExcludeCopCars(true);
-
-	if (ShouldDisableRegularList())
-		CarRandomizer::SetExcludeRegularCars(true);
-
 	uintptr_t loc_6B8EBC = 0x6B8EBC;
 
 	pInitializeEverything = static_cast<uintptr_t>(injector::GetBranchDestination(loc_6B8EBC));
@@ -214,4 +134,3 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpReserved)
 	}
 	return TRUE;
 }
-
